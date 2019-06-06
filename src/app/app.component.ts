@@ -2,6 +2,13 @@ import { Component } from '@angular/core';
 import { InvoiceLine, InvoiceCalculatorService, Invoice } from './invoice-calculator.service';
 import { VatCategory } from './vat-categories.service';
 
+interface IResult {
+  product: string;
+  vatCategory: VatCategory;
+  priceInclusiveVat: string;
+  priceExclusiveVat: string;
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -10,6 +17,10 @@ import { VatCategory } from './vat-categories.service';
 export class AppComponent {
   invoiceLines: InvoiceLine[] = [];
   invoice: Invoice;
+  
+  results: IResult[] = [];
+  totalPriceInclusiveVat: string;
+  totalPriceExclusiveVat: string;
 
   product = '';
   priceInclusiveVat = 0;
@@ -20,6 +31,24 @@ export class AppComponent {
   constructor(private invoiceCalculator: InvoiceCalculatorService) { }
 
   addInvoice() {
-    // ADD necessary code here
+    let category;
+    if (this.vatCategoryString === "Drinks") {
+      category = this.vatCategories.Drinks;
+    } else {
+      category = this.vatCategories.Food;
+    }
+    this.invoiceLines.push({ product: this.product, vatCategory: category, priceInclusiveVat: this.priceInclusiveVat });
+
+    this.invoice = this.invoiceCalculator.CalculateInvoice(this.invoiceLines);
+    this.results = [];
+
+    this.invoice.invoiceLines.forEach(element => {
+      let exclVat = parseFloat(Math.round(element.priceExclusiveVat * 100) / 100 + '').toFixed(2);
+      let inclVat = parseFloat(Math.round(element.priceInclusiveVat * 100) / 100 + '').toFixed(2);
+      this.results.push({ product: element.product, vatCategory: element.vatCategory, priceInclusiveVat: inclVat, priceExclusiveVat: exclVat });
+    });
+
+    this.totalPriceExclusiveVat = parseFloat(Math.round(this.invoice.totalPriceExclusiveVat * 100) / 100 + '').toFixed(2);
+    this.totalPriceInclusiveVat = parseFloat(Math.round(this.invoice.totalPriceInclusiveVat * 100) / 100 + '').toFixed(2);
   }
 }
